@@ -1,4 +1,15 @@
-//? В ДОКУМЕНТАЦИИ ПРИМЕРЫ ПОСЛОЖНЕЕ, там есть методы:  http.request(options), server.on() и т.д
+// Источник видео канала "webDev" "Node.js #8 Создание сервера (Create Server)": https://youtu.be/zH4T7AiMWqY?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0
+
+//! http - для взимодействия клиент-сервер, с потоковой передачей данных,
+//! также сервер используется в файле:
+//! 1) static-app.js (статическая передача html-старниц) и 
+//! 2) main-app.js - с генерация страниц (с EXPRESS-ejs, который позволяет, динамическую передау данных на сайт)
+// это просто пример, для разбора, как работает сервер на Nodejs,
+//! Само приложение - это файла static-app.js
+
+
+
+//? В node-ДОКУМЕНТАЦИИ ПРИМЕРЫ ПОСЛОЖНЕЕ, там есть методы:  http.request(options), server.on() и т.д
 //? ---Чтобы искать в документации, нужно писать сначало точку, а потмо слово, например: ".setHeader"
 
 // модуль http для взимодействия клиент-сервер, с потоковой передачей данных: https://nodejs.org/dist/latest-v18.x/docs/api/http.html
@@ -58,27 +69,37 @@ const server = http.createServer(
         //  res.write('color: red') // тупо текст 'color: red'
         
         //? 4 - варинат, как JSON-данные
-        res.setHeader('Content-Type', 'application/json');
-        const data = JSON.stringify([
-            {name: "Rishat", age: 36},
-            {name: "Tonny", age: 46}
-        ])
+        //res.setHeader('Content-Type', 'application/json');
+    
+        // const data = JSON.stringify([
+        //     {name: "Rishat", age: 36},
+        //     {name: "Tonny", age: 46}
+        // ])       
+        //? 4.1 автор передает json через метод .end, хотя через .write тоже передается
         //res.write(data);
-        //? автор передает json через метод .end, хотя через .write тоже передается
-        res.end(data);
+        //res.end(data);
 
+
+       //? 5 редирект  - протестил кусочек кода из урока № 9 (app.js)
+       if (req.url == '/1') {
+           console.log('111111111111111111111111111111111111111111');
+            res.setHeader('Location', '/contacts2'); // реально редирект происходит (спойлер: то работае, то нет, но в network присутствует = Location: /contacts2), 
+            // но после не смогу избавить от неё, даже выкл сервер + alt +f5, все время редирект с localhost... открыл инкогнито
+            // хотя возможно браузер при обвлении возвращает на прошлую старницу, а она была /contacts2. Но ведь, в header-ах был location: contacts2, короче фиг знает
+            res.end();
+            res.statusCode = 301; // код, который сообщает браузеру, что редирект контрлируемый - хотя без него редирект работает
+            res.setHeader('Location', '/contacts'); // сообщили браузеру об редиректе
+            res.end();
+
+       }
         
-
-        //? 1 - вариант, где контент простой текст
-
-
-        //? 2 - варинат, где контент уже HTML
+       res.end();
         
 
         // req.end() - завершает ответ (можно передавать данный, например json ), и передает управление браузеру(клиенту), если не закончить ответ, страница будет постоянно грузиться
         //? request.end([data[, encoding]][, callback]) - 
         //? ПОДРОБНЕЕ: https://nodejs.org/dist/latest-v18.x/docs/api/http.html#requestenddata-encoding-callback
-        res.end(); // ОБЯЗАТЕЛЬНО В КОНЦЕ
+        //res.end(); // ОБЯЗАТЕЛЬНО В КОНЦЕ
     }
 );
 

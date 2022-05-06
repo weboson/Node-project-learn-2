@@ -1,4 +1,4 @@
-// Этот файл для практики создания Stream передачи анных порциями (buffer)
+// Этот файл для практики создания Stream передачи данных порциями (buffer)
 // Источник видео канала "webDev" "Node.js #6 Буфер и потоки (Buffer & Streams)": https://youtu.be/r--VL8JywyA?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0
 
 // В nodejs есть 4 основных вида потока:
