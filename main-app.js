@@ -1,92 +1,102 @@
-// Источник видео канала "webDev" "Node.js #11 Node.js & Express (Node.js & Express)": https://youtu.be/EJ19W30iiVA?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0
-// В данном уроке была создаем сервер с использованием установленных пакетов express, ejs и nodemon, чтобы постоянно не перезапускать сервер
+// Источник видео канала "Node.js #12 Подключение шаблонизатора (View Engine)": https://youtu.be/OO1W6eSdMqg?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0
+// В данном уроке используется шаблонизатор EJS, и с помощью него передаются данные, которые формируются на сервере (main-app.js) и передаются через ejs на сайт.
+//? Шаблонизатор - это типа, пакет, позволяет сначал разбирать на модули, а потом их можно подкючать ко всем станицам. через:
+//? <%- include('./partials/nav.ejs') %>. Как в PHP. Также можно объявлять прямо в верстке пременные, и там же их показывать, и еще эти пременные можно объявлять на Express-сервере. В общшем, ничего сложно, оф. сайта: https://ejs.co/#docs 
 
-//!!--------ОСТАНОВИЛСЯ НА 2:29: https://youtu.be/EJ19W30iiVA?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0&t=149
-// Справка: основные МЕТОДЫ протокола HTTP
-// 1) GET - ПОЛУЧЕНИЕ данных (сайт получает данные с сервера)
-// 2) POST - ДОБАВЛЕНИЕ данных (сайт отправляет на сервер новые данные в тот же БД MongoDB)
-// 3) DELETE - УДАЛЯЕТ существующие данные (с сайта запрос на удаление каких-либо данных в БД сервера)
-// 4) PUT - ОБНОВЛЯЕТ существующие данных (с сайта запрос на извененение данных в БД сервера)
-// PS.На практике разберусь
+//! Создание сервера средствами фрейворка EXPRESS.js И шаблонизатора EJS + ДИНАМИЧЕСКАЯ генерация данных (переменные на сервере передаются через ejs на сайт) - файл: main-app.js
+// 1) Создание сервера средствами фрейворка EXPRESS.js - файл: express-app.js
+// 2) Реализация сервера НАТИВНЫМИ средствами Nodejs (без фрейворков), со СТАТИЧЕСКОЙ передачей данный (html-страницы) - файл: static-app.js
 
 
-//! Реализация сервера, с использвованием минилистичного web-framework EXPESS.JS
-// Из Express.js мы будем использовать: 
-// 1) - роутинг (передача данных относительно полученного url)
-// 2) - Middleware (промежуточный сервер, связующее ПО, которое момогает обмениватся данными между приложением и сервером)
-// 3) - взимодействие с API
-// 4) - а также для удобной интеграцией с EJS - шаблонизатором, который мы уже установили
 
 const express = require('express');
+const path = require('path');
 const app = express()
 
-//посмотрел что находится в методе express() пакета express.js
-//console.log(express()); // объект с методами, например: get, put, delete, del, render и т.д.
+//! шаблононизатор EJS имеет свой синтаксис (интерполяцию строк), кратко он представлен в папке "ejs-views". 
+//! Пример синтаксиса: чтобы (чем то похоже на PHP): 
+//! 1) <% title %> (вывод данных), 
+//! 2) <%- include('./partials/nav.ejs') %> - подключение файловых модулей.
 
-const path = require('path');
+//! Т.е. чтобы HTML стал динамичным, нужно в HTML-коде страниц внести изменнения.
+//? Официальная страница EJS: https://ejs.co/#docs
+
+//! подключение шаблононизатора EJS в качестве фронт-движка (view engine) в специальный Express.js метод. Подробнее: http://expressjs.com/en/5x/api.html#app.set
+//* app.set(name, value) 
+app.set('view engine', 'ejs'); //? как видно, require() не нужен. Подключение через Express- метод 
 // const fs = require('fs');
 
 const PORT = 3000;
 
-// метод для построения путей
-const createPath = (page) =>  { return path.resolve(__dirname, 'views', `${page}.html`)};
+//! Далее интегрируем папку 'ejs'
+// В метод для построения путей внесем пару изменений: папку 'ejs-views', и расширение .ejs
+const createPath = (page) =>  { return path.resolve(__dirname, 'ejs-views', `${page}.ejs`)};
 
-// назначение порта для прослушивания запросов
-// так как, что у стандартного Node.js-ого, что у Express.js в методе listener аргумент 'localhost' стоит по-умолчанию, значит не станем его указывать
+// слушатель
 app.listen(PORT, (error) => {
     error ? console.log(error) : console.log(`Listening port ${PORT}`); 
 });
 
-//! В Express порядок роутов имеет значение, то есть: если в начале прописать обработку ошибки, то на сайте будет только страница ошибки. Обработка идет сверху в низ, поэтому "обработка ошибки" должна быть в самом конце
-// Пример:
-// 1) Роут для домашней страницы (/homе)
-// 2) Роут для страницы контактов (/contacts)
-// 3) Роут для страницы редиретка (/about-us => /contacts)
-// 4) И в конце обработка ошибки  (/error)
-
-//* 1 - HOME
-// так как expess сам создает сервер, то мы уже можем обмениватся данными сразу после назначения порта
-//метод для отправки данных с сервера в браузер. 
-// app.get('роутинг или запрос на url', callback, которая будет вызыватся, у котрой также есть аргументы req - запрос, res - ответ)
-app.get('/', (req, res) => { // req - запрос, res - ответ
-    // вместо прежних res.write() и res.end(), для отправки ПРИМЕТИВНЫХ ДАННЫХ используем .send:
-    // res.send('<h1>Приветос, Брооо...)</h1>'); // express автоматически устанавливает формат заголовков (setHaeder), относительно аргумента. То есть html -> будет html, текст - будет протсо текст
-
-    // метод для ОТПРАВКИ ФАЙЛА
-    // res.sendFile(path [, options] [, fn]) - подробнее на оф. сайте: http://expressjs.com/en/5x/api.html#res.sendFile
-    res.sendFile(createPath('index')) // отправка определнной страницы, относительно полученному запросу, где запрос на url: /
- 
+// роутинг на домашнюю страницу
+app.get('/', (req, res) => {
+//! Важно: если присутствует на старнице какая-либо переменная, то она обязательно должна имется в ОТВЕТЕ (в res.render), иначе ошибка
+    const title = "Home"; // сохранили значение в title, которое присутсвует в html-коде страницы
+    //! res.render(view [, locals] [, callback]) - Визуализирует представление и отправляет обработанную HTML-строку клиенту. Подробнее: http://expressjs.com/en/5x/api.html#res.render
+    res.render(createPath('index'), {title}); // передали переменную title в рендер
 });
 
-
-//* 2 - CONTACTS
-// подобный (выше) код пишем также для страницы контактов
+// старница контактов
 app.get('/contacts', (req, res) => { 
-    res.sendFile(createPath('contacts')) 
+    const title = "Contacts";
+    // данный массив будет отображен в цикле в шаблоне contacts.ejs 
+    const contacts = [
+        { name: 'YouTube', link: 'http://youtube.com/YauhenKavalchuk' },
+        { name: 'Twitter', link: 'http://github.com/YauhenKavalchuk' },
+        { name: 'GitHub', link: 'http://twitter.com/YauhenKavalchuk' },
+      ];
+    res.render(createPath('contacts'), {contacts, title}); 
  
 });
 
+// старница одного поста
+// реализовано через :id поста
+app.get('/posts/:id', (req, res) => { 
+    const title = "Post";
+    res.render(createPath('post'), {title}); 
+});
 
+// старница списка постов
+app.get('/posts', (req, res) => { 
+    const title = "Posts";
+    res.render(createPath('posts'), {title}); 
+ 
+});
 
-//* 3- РЕДИРЕКТ
+// старница добавления поста
+app.get('/add-post', (req, res) => { 
+    const title = "Add-post";
+    res.render(createPath('add-post'), {title}); 
+});
+
+// редирект
 app.get('/about-us', (req, res) => {
     // res.redirect([status,] path) - метод редиректа
     // Перенаправляет на URL-адрес, полученный из указанного пути, с указанным статусом, положительным целым числом, соответствующим коду статуса HTTP. Если не указано, статус по умолчанию «302 «Найдено». Подробнее на оф.сайте: http://expressjs.com/en/api.html#res.redirect
     res.redirect('/contacts'); // аргумент URL-адрес
 });
 
-//* 4- ОШИБКА
-// если url не сущетсвующий, то вернется станица error
-// app.use([path,] callback [, callback...]) - подробее на оф. сайте: http://expressjs.com/en/5x/api.html#app.use
-// ПРИМЕР MIDDLEWARE, который перехватые не верные пути и рендерить страницу-ошибку
+// ошибка
 app.use((req, res) => { 
+
+    // для ejs
+    const title = "Error-page";
     // есть два варианта передачи кода (в данном случае ошибки)
     // 1) стандартный от NOdejs
-    res.statusCode = 404;
+    // res.statusCode = 404;
     // 2) и имеющийся у Express
     
     // ниже удобный синтаксис цепочка, как у JS-прописов promise().then().catch().finaly
     res
     .status(404)
-    .sendFile(createPath('error')); 
+    .render(createPath('error'), {title}); 
 });
