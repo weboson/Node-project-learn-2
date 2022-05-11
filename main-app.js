@@ -10,8 +10,9 @@
 
 
 const express = require('express');
+const app = express();
 const path = require('path');
-const app = express()
+const morgan = require('morgan'); // Middleware (13-й урок: https://youtu.be/9nQw4iwZGNU?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0)
 
 //! шаблононизатор EJS имеет свой синтаксис (интерполяцию строк), кратко он представлен в папке "ejs-views". 
 //! Пример синтаксиса: чтобы (чем то похоже на PHP): 
@@ -36,6 +37,40 @@ const createPath = (page) =>  { return path.resolve(__dirname, 'ejs-views', `${p
 app.listen(PORT, (error) => {
     error ? console.log(error) : console.log(`Listening port ${PORT}`); 
 });
+
+//! Из Урока №13 "Node.js #13 Промежуточное ПО (Middleware)": https://youtu.be/9nQw4iwZGNU?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0
+//! Middlewares всегда должны быть ПОСЛЕ создания сервера, прослушивателя и ДО ответа (render, send, sendFile, write)
+// Пример промеждуточной функции (Middleware):
+// app.use([path,] callback [, callback...]) - Монтирует указанную функцию или функции промежуточного программного обеспечения по указанному пути: функция промежуточного программного обеспечения выполняется, когда база запрошенного пути совпадает с путем.
+// Подробнее: http://expressjs.com/en/5x/api.html#app.use
+app.use((req, res, next) => { // 3 аргумента 
+    console.log(`path: ${req.path}`);  // пример- path: /contacts
+    console.log(`method: ${req.method}`);  // пример- method: GET
+    next(); // чтобы вернуть контроль серверу, похоже это типа нативного res.end() 
+});
+// // еще один Middleware
+// app.use((req, res, next) => {
+//     console.log('Just for test');
+//     next(); // и конечно обязательно в конце 
+// });
+
+//? Nodejs - в целях безопасности, не позволяет клиенту просто так подключится к файлам (данным) на сервере. 
+// Наш пример: нельзя просто так, из шаблона подключится к файлу стилей, так не получится: <link rel="stylesheet" href="/main.css">
+// Нужно разрешить подключатся к данной папке со стилями. 
+// Для этого также используется промежуточное ПО Middleware
+// express.static(root, [options]) - Это встроенная промежуточная функция в Express. 
+// Он обслуживает статические файлы и основан на serve-static. Подробнее: http://expressjs.com/en/5x/api.html#express.static
+// Аргумент root указывает корневой каталог, из которого следует обслуживать статические ресурсы.
+app.use(express.static('styles'));
+
+
+//? Также пользуются готовыми промежутоными ПО (Middleware) (npm-пакетами). Список представлен: http://expressjs.com/en/resources/middleware/morgan.html
+//? Также нужно их устанавливать в проект: "npm install morgan"
+// и далее используется
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms')); // будет в консоли появлятяс информация: ms, status etc
+
+
+
 
 // роутинг на домашнюю страницу
 app.get('/', (req, res) => {
