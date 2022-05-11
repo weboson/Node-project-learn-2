@@ -1,0 +1,2 @@
+Данные для демонстрации чтения взаимодействия с глобальным объектом (модулем): fs (filesystem)
+// Урок №4: "Node.js #4 Node.js и файловая система (Node.js & File System)": https://youtu.be/0TcIslnoXCQ?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0 
