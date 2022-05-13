@@ -69,7 +69,20 @@ app.use(express.static('styles'));
 // и далее используется
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms')); // будет в консоли появлятяс информация: ms, status etc
 
-
+//! (Из урока №14 - 6:04): 
+// Отрывок из "https://learn.javascript.ru/xhr-forms": "Основной способ кодировки запросов – это urlencoded, то есть – стандартное кодирование URL."
+// Чтобы спарсить POST-запрос, то есть, прочитать запрос с сайта (клиента), нам нужно эти ВХОДНЫЕ ДАННЫЕ РАСКОДИРОВАТЬ с URL-кодированного состояние. 
+// Википедия про URL: https://ru.wikipedia.org/wiki/URL 
+// Как я понял (нагуглил: https://learn.javascript.ru/xhr-forms), POST - запросы могут передоваться в разных кодировках, один из частых это URL-кодинг.
+//? Пример url-закодированного post-запроса: "add-post?title=3&author=4&text=5"
+//? Например, пробел заменяется на %20, символ / на %2F, русские буквы кодируются двумя байтами в UTF-8, поэтому, к примеру, Ц заменится на %D0%A6. Из статьи: https://learn.javascript.ru/xhr-forms
+// Чтобы РАСКОДИРОВАТЬ URL-ДАННЫЕ нужно использовать встроенный в Express метод: .urlencoded()
+//! express.urlencoded([options]) - подробнее: http://expressjs.com/en/5x/api.html#express.urlencoded
+// Данный метод также запускает в промежутоном ПО (Middleware). Кстати, раньше использовали для парсинга пакет body-parser
+// Определение из фо.сайта: Функция express.urlencoded ()  - это встроенная функция промежуточного программного обеспечения в Express. Он анализирует входящие запросы с полезной нагрузкой с кодировкой urlencoded и основан на парсере тела.
+// РАСКОДИРОВКА из URL-кодирования
+app.use(express.urlencoded({ extended: false })); // extended: fasle - без расширенного парсинга
+// Далее ниже используем метод app.post()
 
 
 // роутинг на домашнюю страницу
@@ -93,19 +106,70 @@ app.get('/contacts', (req, res) => {
  
 });
 
+
+//! Из Урока №14 "Node.js #14 Обработка POST запроса (Handling Post Requests)": https://youtu.be/mxv8ykwaWEw?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0
+//! Модернизирую станицу posts/:id - делаю динамичные данные (теперь данные будут хрониться на сервере (не в БД), а не в верстке в шаблоне)
 // старница одного поста
 // реализовано через :id поста
 app.get('/posts/:id', (req, res) => { 
     const title = "Post";
-    res.render(createPath('post'), {title}); 
+    // добавим данные, которые будем размещать в верстке (post.ejs)
+    const post = {
+        id: '1',
+        text: 'Lorem Ipsum - это текст-"рыба", часто используемый в печати и вэб-дизайне. Lorem Ipsum является стандартной "рыбой" для текстов на латинице с начала XVI века. В то время некий безымянный печатник создал большую коллекцию размеров и форм шрифтов, используя Lorem Ipsum для распечатки образцов. Lorem Ipsum не только успешно пережил без заметных изменений пять веков, но и перешагнул в электронный дизайн. Его популяризации в новое время послужили публикация листов Letraset с образцами Lorem Ipsum в 60-х годах и, в более недавнее время, программы электронной вёрстки типа Aldus PageMaker, в шаблонах которых используется Lorem Ipsum.',
+        title: 'Post title',
+        date: '05.05.2021',
+        author: 'Rishat',
+    };
+    res.render(createPath('post'), {title, post}); // res.render(path, date)
 });
 
+
+//! Модернизирую станицу (урок 14): передаю массив данных (постов) в верстку (posts.ejs)
 // старница списка постов
 app.get('/posts', (req, res) => { 
     const title = "Posts";
-    res.render(createPath('posts'), {title}); 
+    const posts = [
+        {
+            id: '1',
+            text: 'Lorem Ipsum - это текст-"рыба", часто используемый в печати и вэб-дизайне. Lorem Ipsum является стандартной "рыбой" для текстов на латинице с начала XVI века. В то время некий безымянный печатник создал большую коллекцию размеров и форм шрифтов, используя Lorem Ipsum для распечатки образцов. Lorem Ipsum не только успешно пережил без заметных изменений пять веков, но и перешагнул в электронный дизайн. Его популяризации в новое время послужили публикация листов Letraset с образцами Lorem Ipsum в 60-х годах и, в более недавнее время, программы электронной вёрстки типа Aldus PageMaker, в шаблонах которых используется Lorem Ipsum.',
+            title: 'Post title',
+            date: '05.05.2021',
+            author: 'Rishat',
+        },
+    ]
+    res.render(createPath('posts'), {title, posts}); 
  
 });
+
+
+//! (Урок 14) После того, как мы раскодировали url-запрос, то есть после строчки "app.use(express.urlencoded({ extended: false }));", используем метод:
+// app.post(path, callback [, callback ...]) - Направляет запросы HTTP POST по указанному пути с указанными функциями обратного вызова. Подробнее: http://expressjs.com/en/5x/api.html#app.post.method
+//, вытягиваем данные из /add-post
+app.post('/add-post', (req, res) => { // как я понял .post ВЫТЯГИВАЕТ ДАННЫЕ посылаемого из формы url: /add-post и потомы мы уже .render('шаблон для вывода'...)
+    //res.send(req.body); // чтобы проверить работоспособнеость кода
+
+    // //! Из оф.сайта: "req.body" - Содержит пары ключ-значение данных, представленных в тексте запроса. 
+    // //! По умолчанию он не определен и заполняется, когда вы используете промежуточное ПО для разбора тела, такое как body-parser и multer.
+    // //! Подробнее: http://expressjs.com/en/5x/api.html#req.body
+    // Деструктуризация req.body (вытянутых данных)
+    // В POST-запросе содержатся данные из формы (У КОТОРОГО ОБЯЗАТЕЛЬНО ДОЛЖЕН БЫТЬ method="post" - без него не сработает): name="title", name="author", name="text"
+    const { title, author, text } = req.body; // 
+    // присвоем эти данные в константу post
+    const post = {
+        // добавим еще данные
+        id: new Date(), // не понял зачем: 8:10: https://youtu.be/mxv8ykwaWEw?list=PLNkWIWHIRwMFtsaJ4b_wwkJDHKJeuAkP0&t=492
+        date: (new Date()).toLocaleDateString(), // чтобы дата отображалась в нужном формате
+
+        // переменные из формы (name="...")
+        title,
+        author,
+        text,
+    };
+    
+    // отрисуем это в шаблоне post.ejs
+    res.render(createPath('post'), { post, title}); // post и title для заголовка старницы
+})
 
 // старница добавления поста
 app.get('/add-post', (req, res) => { 
