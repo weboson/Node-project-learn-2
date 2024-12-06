@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('./partials/head.ejs') %>
+<body>
+  <%- include('./partials/nav.ejs') %>
+  <article>
+    <div class="info">
+      <!-- 'No date' это строка по-умолчанию, если  post.date == null-->
+      <span><%= post.date || 'No date' %></span> 
+      <span><%= post.author %></span>
+    </div>
+    <h1><%= post.title %></h1>
+    <p><%= post.text %></p>
+  </article>
+</body>
+</html>
